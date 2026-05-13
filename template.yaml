@@ -15,15 +15,13 @@ Globals:
 
 Resources:
 
-  # ── API ──────────────────────────────────────────────────────────────────
-
+  # API
   SpendAlertsApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: prod
 
-  # ── Lambdas ───────────────────────────────────────────────────────────────
-
+  # Lambdas
   EvaluateTransactionFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -70,8 +68,7 @@ Resources:
         EntryPoints:
           - index.ts
 
-  # ── DynamoDB ──────────────────────────────────────────────────────────────
-
+  # DynamoDB
   SpendingRulesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -84,15 +81,13 @@ Resources:
         - AttributeName: ruleId
           KeyType: HASH
 
-  # ── SNS ───────────────────────────────────────────────────────────────────
-
+  # SNS
   AlertsTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: SpendAlerts
 
-  # ── SQS ───────────────────────────────────────────────────────────────────
-
+  # SQS
   AlertsQueue:
     Type: AWS::SQS::Queue
     Properties:
