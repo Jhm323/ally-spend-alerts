@@ -200,6 +200,62 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Ref AlertsTopic
 
+  # CloudWatch
+  SpendAlertsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: AllySpendAlerts-Dashboard
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "title": "Invocations",
+                "view": "timeSeries",
+                "stacked": false,
+                "period": 300,
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${EvaluateTransactionFunction}", {"period": 300, "stat": "Sum", "label": "evaluateTransaction"}],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${ProcessAlertFunction}", {"period": 300, "stat": "Sum", "label": "processAlert"}],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${GetAlertsFunction}", {"period": 300, "stat": "Sum", "label": "getAlerts"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "title": "Errors",
+                "view": "timeSeries",
+                "stacked": false,
+                "period": 300,
+                "metrics": [
+                  ["AWS/Lambda", "Errors", "FunctionName", "${EvaluateTransactionFunction}", {"period": 300, "stat": "Sum", "label": "evaluateTransaction"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${ProcessAlertFunction}", {"period": 300, "stat": "Sum", "label": "processAlert"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${GetAlertsFunction}", {"period": 300, "stat": "Sum", "label": "getAlerts"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "title": "Duration (avg ms)",
+                "view": "timeSeries",
+                "stacked": false,
+                "period": 300,
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${EvaluateTransactionFunction}", {"period": 300, "stat": "Average", "label": "evaluateTransaction"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${ProcessAlertFunction}", {"period": 300, "stat": "Average", "label": "processAlert"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${GetAlertsFunction}", {"period": 300, "stat": "Average", "label": "getAlerts"}]
+                ]
+              }
+            }
+          ]
+        }
+
 Outputs:
   AlertsTableName:
     Value: !Ref AlertsTable
@@ -219,3 +275,5 @@ Outputs:
     Value: !Ref AlertsQueue
   AlertsDLQUrl:
     Value: !Ref AlertsDLQ
+  DashboardName:
+    Value: !Ref SpendAlertsDashboard
