@@ -4,5 +4,3 @@ import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 const client = new DynamoDBClient({});
 
 export const docClient = DynamoDBDocumentClient.from(client);
-
-export const RULES_TABLE = process.env.RULES_TABLE!;

@@ -1,5 +1,6 @@
 export interface Transaction {
   id: string;
+  userId: string;
   accountId: string;
   amount: number;
   merchantName: string;
@@ -8,16 +9,12 @@ export interface Transaction {
   timestamp: string;
 }
 
-export interface RuleCondition {
-  field: keyof Transaction;
-  operator: 'gt' | 'lt' | 'eq' | 'contains';
-  value: string | number;
-}
-
 export interface SpendingRule {
   ruleId: string;
+  userId: string;
   name: string;
-  condition: RuleCondition;
+  category: string;
+  threshold: number;
   alertMessage: string;
   enabled: boolean;
   createdAt: string;

@@ -8,10 +8,6 @@ Globals:
     Timeout: 30
     Architectures:
       - arm64
-    Environment:
-      Variables:
-        RULES_TABLE: !Ref SpendingRulesTable
-        ALERTS_TOPIC_ARN: !Ref AlertsTopic
 
 Resources:
 
@@ -34,9 +30,16 @@ Resources:
             RestApiId: !Ref SpendAlertsApi
             Path: /webhook
             Method: POST
+      Environment:
+        Variables:
+          TRANSACTIONS_TABLE: !Ref TransactionsTable
+          SPENDING_RULES_TABLE: !Ref SpendingRulesTable
+          SNS_TOPIC_ARN: !Ref AlertsTopic
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref SpendingRulesTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref TransactionsTable
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt AlertsTopic.TopicName
     Metadata:
@@ -69,17 +72,33 @@ Resources:
           - index.ts
 
   # DynamoDB
+  TransactionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Transactions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
   SpendingRulesTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: SpendingRules
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
         - AttributeName: ruleId
           AttributeType: S
       KeySchema:
-        - AttributeName: ruleId
+        - AttributeName: userId
           KeyType: HASH
+        - AttributeName: ruleId
+          KeyType: RANGE
 
   # SNS
   AlertsTopic:
@@ -125,6 +144,10 @@ Resources:
                 aws:SourceArn: !Ref AlertsTopic
 
 Outputs:
+  TransactionsTableName:
+    Value: !Ref TransactionsTable
+  SpendingRulesTableName:
+    Value: !Ref SpendingRulesTable
   WebhookEndpoint:
     Description: POST transaction webhooks here
     Value: !Sub https://${SpendAlertsApi}.execute-api.${AWS::Region}.amazonaws.com/prod/webhook
