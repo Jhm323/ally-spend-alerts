@@ -23,6 +23,7 @@ export interface SpendingRule {
 export interface Alert {
   ruleId: string;
   ruleName: string;
+  threshold: number;
   transaction: Transaction;
   message: string;
   triggeredAt: string;

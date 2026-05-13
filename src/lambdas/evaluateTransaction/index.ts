@@ -75,6 +75,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         const alert: Alert = {
           ruleId: rule.ruleId,
           ruleName: rule.name,
+          threshold: rule.threshold,
           transaction,
           message: rule.alertMessage,
           triggeredAt: new Date().toISOString(),
