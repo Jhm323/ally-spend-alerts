@@ -77,6 +77,32 @@ Resources:
         EntryPoints:
           - index.ts
 
+  GetAlertsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      CodeUri: src/lambdas/getAlerts/
+      Events:
+        GetAlerts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SpendAlertsApi
+            Path: /alerts
+            Method: GET
+      Environment:
+        Variables:
+          ALERTS_TABLE: !Ref AlertsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AlertsTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+
   # DynamoDB
   AlertsTable:
     Type: AWS::DynamoDB::Table
@@ -86,9 +112,22 @@ Resources:
       AttributeDefinitions:
         - AttributeName: alertId
           AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
       KeySchema:
         - AttributeName: alertId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdTimestampIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
 
   TransactionsTable:
     Type: AWS::DynamoDB::Table
@@ -171,6 +210,9 @@ Outputs:
   WebhookEndpoint:
     Description: POST transaction webhooks here
     Value: !Sub https://${SpendAlertsApi}.execute-api.${AWS::Region}.amazonaws.com/prod/webhook
+  AlertsEndpoint:
+    Description: GET /alerts?userId=...
+    Value: !Sub https://${SpendAlertsApi}.execute-api.${AWS::Region}.amazonaws.com/prod/alerts
   AlertsTopicArn:
     Value: !Ref AlertsTopic
   AlertsQueueUrl:
