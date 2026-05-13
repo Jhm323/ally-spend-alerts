@@ -1,0 +1,6 @@
+.env
+.env.local
+dist/
+.aws-sam/
+cdk.out/
+*.js.map
