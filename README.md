@@ -29,8 +29,6 @@ React (S3)
                  └─ DynamoDB (Alerts, GSI: UserIdTimestampIndex) — return sorted results
 ```
 
-All three Lambda functions are monitored via a CloudWatch dashboard.
-
 ## AWS services
 
 | Service | Purpose |
@@ -40,7 +38,6 @@ All three Lambda functions are monitored via a CloudWatch dashboard.
 | DynamoDB | SpendingRules, Transactions, and Alerts tables |
 | SNS | Fanout topic that decouples rule evaluation from alert processing |
 | SQS | Alert queue with DLQ; buffers messages between SNS and processAlert |
-| CloudWatch | Dashboard tracking invocations, errors, and duration across all functions |
 | S3 | Lambda deployment artifacts (managed by SAM); frontend static hosting |
 
 ## Project structure
@@ -101,6 +98,3 @@ All variables are injected by SAM at deploy time. Do not set them manually.
 | processAlert | `ALERTS_TABLE` | DynamoDB Alerts table name |
 | getAlerts | `ALERTS_TABLE` | DynamoDB Alerts table name |
 
-## CloudWatch
-
-After deploy, open CloudWatch → Dashboards → **AllySpendAlerts-Dashboard** to view invocation counts, error counts, and average duration for all three functions over a rolling 1-hour window.

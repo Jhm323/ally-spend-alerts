@@ -10,6 +10,12 @@ const TRANSACTIONS_TABLE = process.env.TRANSACTIONS_TABLE!;
 const SPENDING_RULES_TABLE = process.env.SPENDING_RULES_TABLE!;
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN!;
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+};
+
 class ValidationError extends Error {}
 
 function parseTransaction(body: string | null): Transaction {
@@ -36,32 +42,38 @@ function parseTransaction(body: string | null): Transaction {
 }
 
 export const handler: APIGatewayProxyHandler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+  }
+
   let transaction: Transaction;
   try {
     transaction = parseTransaction(event.body);
+    console.log('[parseTransaction] parsed transaction:', transaction);
   } catch (err) {
     if (err instanceof ValidationError) {
-      return { statusCode: 400, body: JSON.stringify({ error: err.message }) };
+      return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: err.message }) };
     }
     throw err;
   }
 
   try {
-    const rulesResult = await docClient.send(
-      new QueryCommand({
-        TableName: SPENDING_RULES_TABLE,
-        KeyConditionExpression: 'userId = :userId',
-        FilterExpression: 'category = :category AND enabled = :true',
-        ExpressionAttributeValues: {
-          ':userId': transaction.userId,
-          ':category': transaction.merchantCategory,
-          ':true': true,
-        },
-      })
-    );
+    const queryParams = {
+      TableName: SPENDING_RULES_TABLE,
+      KeyConditionExpression: 'userId = :userId',
+      ExpressionAttributeValues: { ':userId': transaction.userId },
+    };
+    console.log('[queryRules] query params:', queryParams);
+
+    const rulesResult = await docClient.send(new QueryCommand(queryParams));
+    console.log('[queryRules] raw items returned:', rulesResult.Items);
 
     const rules = (rulesResult.Items ?? []) as SpendingRule[];
-    const firedRules = rules.filter((rule) => transaction.amount > rule.threshold);
+    const firedRules = rules.filter((rule) => {
+      const fired = rule.category === transaction.merchantCategory && transaction.amount > rule.threshold;
+      console.log('[evaluateRule] rule:', rule.ruleId, '| category:', rule.category, '| threshold:', rule.threshold, '| amount:', transaction.amount, '| fired:', fired);
+      return fired;
+    });
 
     await docClient.send(
       new PutCommand({
@@ -92,12 +104,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ evaluated: true, alertsFired: firedRules.length }),
     };
   } catch (err) {
     console.error('Lambda execution failed', { error: err, transactionId: transaction.id });
     return {
       statusCode: 500,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'Internal server error' }),
     };
   }

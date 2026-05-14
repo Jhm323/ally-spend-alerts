@@ -16,7 +16,6 @@ export interface SpendingRule {
   category: string;
   threshold: number;
   alertMessage: string;
-  enabled: boolean;
   createdAt: string;
 }
 
